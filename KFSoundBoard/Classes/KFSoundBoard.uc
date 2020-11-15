@@ -5,7 +5,7 @@
 
 class KFSoundBoard extends Mutator Config(SoundBoardConfig);
 
-// SoundPack exec goes here
+#exec OBJ LOAD FILE=SoundBoardSND.uax
 
 // Config Vars
 var() config bool bDebug, bNotifyOnSoundUsed;
@@ -36,6 +36,9 @@ function PostBeginPlay()
 {
   // Generate Default Config File, keep commented unless you want to generate one yourself
   // SaveConfig();
+
+  // Force client to download SoundPack
+  AddToPackageMap("SoundBoardSND.uax");
 
   if(bDebug)
   {
@@ -86,9 +89,9 @@ function Mutate(string command, PlayerController Sender)
     PrintAllSounds(SoundList, Sender);
   }
 
-  if(Left(command, Len(sPlaySoundCMD) ~= sPlaySoundCMD)
+  if(Left(command, Len(sPlaySoundCMD)) ~= sPlaySoundCMD)
   {
-    PlaySoundEffect(SplitCMD[1], SoundList, PN);
+    CheckSoundAndPlay(SplitCMD[1], SoundList, PN);
   }
 }
 
@@ -127,11 +130,11 @@ function CriticalServerMessage(string Msg)
 	}
 }
 
-function bool PlaySoundEffect(string SoundToPlay, array<CS> ListOfSounds, string PlayerName)
+function bool CheckSoundAndPlay(string SoundToPlay, array<CS> ListOfSounds, string PlayerName)
 {
   local int i;
   local string SoundPlayedMSG;
-  local Sound SoundEffect;
+  local sound SoundEffect;
   for(i=0; i<ListOfSounds.Length; i++)
   {
     if(ListOfSounds[i].Sound != "" && ListOfSounds[i].SoundTag != "" && ListOfSounds[i].SoundBind != "")
@@ -139,19 +142,35 @@ function bool PlaySoundEffect(string SoundToPlay, array<CS> ListOfSounds, string
       if (SoundToPlay ~= ListOfSounds[i].SoundBind)
       {
 		    if(bDebug) MutLog("-----|| DEBUG - Found: Bind [" $ListOfSounds[i].SoundBind$ "] | Tag [" $ListOfSounds[i].SoundTag$ "] ||-----");
-        SoundEffect = Sound(DynamicLoadObject(ListOfSounds[i].Sound, class'Sound'));
-        SoundPlayedMSG = "%t" $ListOfSounds[i].SoundBind$ "%w! ( $PlayerName$ ")";
-        if(bNotifyOnSoundUsed) ServerMessage(SoundPlayedMSG);
-        PlaySound(SoundEffect, SLOT_None, , , 500);
-        return true;
-      }
-      else
-      {
-		    if(bDebug) MutLog("-----|| DEBUG - Bind Not Found: [" $SoundToPlay$ "] ||-----");
-        return false;
+        SoundEffect = sound(DynamicLoadObject(ListOfSounds[i].Sound, class'Sound'));
+        if(bDebug) MutLog("-----|| DEBUG - Attempting to play: Sound [" $SoundEffect$ "] ||-----");
+        SoundPlayedMSG = "%t" $ListOfSounds[i].SoundBind$ "%w! [" $PlayerName$ "]";
+        if (SoundEffect != none)
+        {
+          if(bNotifyOnSoundUsed) ServerMessage(SoundPlayedMSG);
+          PlaySoundEffect(ListOfSounds[i].Sound);
+          return true;
+        }
       }
     }
   }
+  if(bDebug) MutLog("-----|| DEBUG - Bind Not Found: [" $SoundToPlay$ "] ||-----");
+  return false;
+}
+
+function PlaySoundEffect(string Sound)
+{
+  local Controller C;
+  local sound SoundEffect;
+
+  SoundEffect = sound(DynamicLoadObject(Sound, class'Sound'));
+  for( C = Level.ControllerList; C != None; C = C.nextController )
+	{
+		if( C.IsA('PlayerController') && PlayerController(C).PlayerReplicationInfo.PlayerID != 0)
+		{
+			PlayerController(C).ClientPlaySound(SoundEffect);
+		}
+	}
 }
 
 function PrintAllSounds(array<CS> Sounds, PlayerController PC)
