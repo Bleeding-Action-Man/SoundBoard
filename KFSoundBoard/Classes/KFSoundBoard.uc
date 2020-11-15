@@ -8,8 +8,9 @@ class KFSoundBoard extends Mutator Config(SoundBoardConfig);
 // SoundPack exec goes here
 
 // Config Vars
-var() config bool bDebug;
+var() config bool bDebug, bNotifyOnSoundUsed;
 var() config int iDelay;
+var() config string sPlaySoundCMD;
 
 // Sound Declaration Struct
 struct CS
@@ -62,7 +63,7 @@ function Mutate(string command, PlayerController Sender)
 		WelcomeMSG = "%yYou are viewing Sound-Board Help, below are the commands you can use";
 		DelayMSG = "%bDelay between sounds (seconds): %w" $iDelay;
 		TotalSoundsMSG = "%bTotal Sounds: %w" $SoundList.Length;
-		UsageMSG = "%bUsage: %wmutate %tXXX%w | XXX is the tag of the sound you want to play";
+		UsageMSG = "%bUsage: %wmutate " $sPlaySoundCMD$ " %tXXX%w | XXX is the tag of the sound you want to play";
     PrintSoundsMSG = "%bTo view all available sounds: %wmutate %t!sounds %wOR %t!snds";
 
     SetColor(WelcomeMSG);
@@ -85,6 +86,10 @@ function Mutate(string command, PlayerController Sender)
     PrintAllSounds(SoundList, Sender);
   }
 
+  if(Left(command, Len(sPlaySoundCMD) ~= sPlaySoundCMD)
+  {
+    PlaySoundEffect(SplitCMD[1], SoundList, PN);
+  }
 }
 
 final function SplitStringToArray(out array<string> Parts, string Source, string Delim)
@@ -120,6 +125,33 @@ function CriticalServerMessage(string Msg)
 			PC.ClientMessage(Msg, 'CriticalEvent');
 		}
 	}
+}
+
+function bool PlaySoundEffect(string SoundToPlay, array<CS> ListOfSounds, string PlayerName)
+{
+  local int i;
+  local string SoundPlayedMSG;
+  local Sound SoundEffect;
+  for(i=0; i<ListOfSounds.Length; i++)
+  {
+    if(ListOfSounds[i].Sound != "" && ListOfSounds[i].SoundTag != "" && ListOfSounds[i].SoundBind != "")
+    {
+      if (SoundToPlay ~= ListOfSounds[i].SoundBind)
+      {
+		    if(bDebug) MutLog("-----|| DEBUG - Found: Bind [" $ListOfSounds[i].SoundBind$ "] | Tag [" $ListOfSounds[i].SoundTag$ "] ||-----");
+        SoundEffect = Sound(DynamicLoadObject(ListOfSounds[i].Sound, class'Sound'));
+        SoundPlayedMSG = "%t" $ListOfSounds[i].SoundBind$ "%w! ( $PlayerName$ ")";
+        if(bNotifyOnSoundUsed) ServerMessage(SoundPlayedMSG);
+        PlaySound(SoundEffect, SLOT_None, , , 500);
+        return true;
+      }
+      else
+      {
+		    if(bDebug) MutLog("-----|| DEBUG - Bind Not Found: [" $SoundToPlay$ "] ||-----");
+        return false;
+      }
+    }
+  }
 }
 
 function PrintAllSounds(array<CS> Sounds, PlayerController PC)
@@ -189,9 +221,10 @@ defaultproperties
 	GroupName = "KF-SoundBoard"
   FriendlyName = "Sound Board - v1.0"
   Description = "Play custom sounds with key binds / mutate commands; Made by Vel-San"
-	bAddToServerPackages=true
 
   // Config Vars
   bDebug = True
+  bNotifyOnSoundUsed = True
   iDelay = 3
+  sPlaySoundCMD = "do"
 }
