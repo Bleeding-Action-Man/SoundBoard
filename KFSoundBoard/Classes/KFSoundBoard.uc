@@ -9,12 +9,13 @@ class KFSoundBoard extends Mutator Config(SoundBoardConfig);
 
 // Config Vars
 var() config bool bDebug;
+var() config int iDelay;
 
 // Sound Declaration Struct
 struct CS
 {
-  var config sound Sound; // Name of sound in the SoundPack
-  var config string SoundName; // Name for human readbility, doesn't affect anything
+  var config string Sound; // Name of sound in the SoundPack, e.g. XX.YY
+  var config string SoundTag; // Tag for human readbility, doesn't affect anything
   var config string SoundBind; // Bind to be used with mutate, e.g. mutate meow
 };
 var() config array<CS> SoundList; // SoundsList
@@ -32,6 +33,9 @@ var() config array<ColorRecord> ColorList; // Color list
 // Initialization
 function PostBeginPlay()
 {
+  // Generate Default Config File, keep commented unless you want to generate one yourself
+  // SaveConfig();
+
   if(bDebug)
   {
     MutLog("-----|| Found [" $SoundList.Length$ "] Sounds in Config File ||-----");
@@ -40,20 +44,47 @@ function PostBeginPlay()
 
 function Mutate(string command, PlayerController Sender)
 {
-  local string PN, PID;
+  local string PN, PID, WelcomeMSG, DelayMSG, TotalSoundsMSG, UsageMSG, PrintSoundsMSG;
   local array<string> SplitCMD;
 
   PN = Sender.PlayerReplicationInfo.PlayerName;
   PID = Sender.GetPlayerIDHash();
 
-  if(Debug)
+  if(bDebug)
 	{
 		MutLog("-----|| DEBUG - '" $command$ "' accessed by: " $PN$ " | PID: " $PID$  " ||-----");
 	}
 
   SplitStringToArray(SplitCMD, command, " ");
 
-  // If command = XX -- Goes Here
+  if(command ~= "sb help" || command ~= "soundboard help")
+	{
+		WelcomeMSG = "%yYou are viewing Sound-Board Help, below are the commands you can use";
+		DelayMSG = "%bDelay between sounds (seconds): %w" $iDelay;
+		TotalSoundsMSG = "%bTotal Sounds: %w" $SoundList.Length;
+		UsageMSG = "%bUsage: %wmutate %tXXX%w | XXX is the tag of the sound you want to play";
+    PrintSoundsMSG = "%bTo view all available sounds: %wmutate %t!sounds %wOR %t!snds";
+
+    SetColor(WelcomeMSG);
+		SetColor(DelayMSG);
+		SetColor(TotalSoundsMSG);
+		SetColor(UsageMSG);
+		SetColor(PrintSoundsMSG);
+
+    Sender.ClientMessage(WelcomeMSG);
+		Sender.ClientMessage(DelayMSG);
+		Sender.ClientMessage(TotalSoundsMSG);
+		Sender.ClientMessage(UsageMSG);
+		Sender.ClientMessage(PrintSoundsMSG);
+
+		return;
+	}
+
+  if(command ~= "!sounds" || command ~= "!snds" )
+  {
+    PrintAllSounds(SoundList, Sender);
+  }
+
 }
 
 final function SplitStringToArray(out array<string> Parts, string Source, string Delim)
@@ -91,14 +122,29 @@ function CriticalServerMessage(string Msg)
 	}
 }
 
+function PrintAllSounds(array<CS> Sounds, PlayerController PC)
+{
+  local string TmpSoundMSG;
+  local int i;
+  for(i=0; i<Sounds.Length; i++)
+  {
+    if(Sounds[i].Sound != "" && Sounds[i].SoundTag != "" && Sounds[i].SoundBind != "")
+    {
+      TmpSoundMSG = "%wSound: %b" $Sounds[i].SoundTag$ "%w | Bind: %t" $Sounds[i].SoundBind;
+      SetColor(TmpSoundMSG);
+      PC.ClientMessage(TmpSoundMSG);
+    }
+  }
+}
+
 function TimeStampLog(coerce string s)
 {
-  log("["$Level.TimeSeconds$"s]" @ s, 'SkipTrader');
+  log("["$Level.TimeSeconds$"s]" @ s, 'SoundBoard');
 }
 
 function MutLog(string s)
 {
-  log(s, 'SkipTrader');
+  log(s, 'SoundBoard');
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -146,5 +192,6 @@ defaultproperties
 	bAddToServerPackages=true
 
   // Config Vars
-  bDebug=True
+  bDebug = True
+  iDelay = 3
 }
