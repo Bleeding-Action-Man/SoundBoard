@@ -9,8 +9,12 @@ class KFSoundBoard extends Mutator Config(SoundBoardConfig);
 
 // Config Vars
 var() config bool bDebug, bNotifyOnSoundUsed;
-var() config int iDelay;
+var() config int iDelay, iTimeOut;
 var() config string sPlaySoundCMD;
+
+// Vars
+var string sLastSoundPlayedBy;
+var int iLastPlayedAt, iPlayedCount;
 
 // Sound Declaration Struct
 struct CS
@@ -40,10 +44,18 @@ function PostBeginPlay()
   // Force client to download SoundPack
   AddToPackageMap("SoundBoardSND.uax");
 
+  // Initialize
+  iPlayedCount = 0;
   if(bDebug)
   {
     MutLog("-----|| Found [" $SoundList.Length$ "] Sounds in Config File ||-----");
   }
+}
+
+function Timer()
+{
+  sLastSoundPlayedBy = "";
+  iLastPlayedAt = 0;
 }
 
 function Mutate(string command, PlayerController Sender)
@@ -91,7 +103,7 @@ function Mutate(string command, PlayerController Sender)
 
   if(Left(command, Len(sPlaySoundCMD)) ~= sPlaySoundCMD)
   {
-    CheckSoundAndPlay(SplitCMD[1], SoundList, PN);
+    CheckSoundAndPlay(SplitCMD[1], SoundList, PN, Sender);
   }
 }
 
@@ -130,11 +142,15 @@ function CriticalServerMessage(string Msg)
 	}
 }
 
-function bool CheckSoundAndPlay(string SoundToPlay, array<CS> ListOfSounds, string PlayerName)
+function bool CheckSoundAndPlay(string SoundToPlay, array<CS> ListOfSounds, string PlayerName, PlayerController TmpPC)
 {
   local int i;
-  local string SoundPlayedMSG;
+  local string SoundPlayedMSG, SpamMSG, SpamCountMSG;
   local sound SoundEffect;
+
+  SpamMSG = "%b" $PlayerName$ "%w, Please don't spam - There's a %t" $iDelay$ "%w seconds delay between sounds!";
+  SpamCountMSG = "%b" $PlayerName$ "%w, You can play %t" $iTimeOut$ " %wconsecutive voices before you are timed out!";
+
   for(i=0; i<ListOfSounds.Length; i++)
   {
     if(ListOfSounds[i].Sound != "" && ListOfSounds[i].SoundTag != "" && ListOfSounds[i].SoundBind != "")
@@ -147,9 +163,32 @@ function bool CheckSoundAndPlay(string SoundToPlay, array<CS> ListOfSounds, stri
         SoundPlayedMSG = "%t" $ListOfSounds[i].SoundBind$ "%w! [" $PlayerName$ "]";
         if (SoundEffect != none)
         {
-          if(bNotifyOnSoundUsed) ServerMessage(SoundPlayedMSG);
-          PlaySoundEffect(ListOfSounds[i].Sound);
-          return true;
+          if(sLastSoundPlayedBy == PlayerName && iPlayedCount < iTimeOut)
+            {
+              iPlayedCount = iPlayedCount + 1;
+              if (iPlayedCount > iTimeOut)
+              {
+                SetColor(SpamCountMSG);
+                TmpPC.ClientMessage(SpamCountMSG);
+                return false;
+              }
+            }
+          if (iLastPlayedAt < (Level.TimeSeconds))
+          {
+            if(sLastSoundPlayedBy != PlayerName) iPlayedCount = 0;
+            if(bNotifyOnSoundUsed) ServerMessage(SoundPlayedMSG);
+            PlaySoundEffect(ListOfSounds[i].Sound);
+            iLastPlayedAt = Level.TimeSeconds + iDelay;
+            sLastSoundPlayedBy = PlayerName;
+            SetTimer(iDelay, false);
+            return true;
+          }
+          else
+          {
+            SetColor(SpamMSG);
+            TmpPC.ClientMessage(SpamMSG);
+            return false;
+          }
         }
       }
     }
@@ -244,6 +283,7 @@ defaultproperties
   // Config Vars
   bDebug = True
   bNotifyOnSoundUsed = True
-  iDelay = 3
+  iDelay = 5
+  iTimeOut = 3
   sPlaySoundCMD = "do"
 }
