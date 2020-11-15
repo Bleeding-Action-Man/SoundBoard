@@ -45,7 +45,8 @@ function PostBeginPlay()
   AddToPackageMap("SoundBoardSND.uax");
 
   // Initialize
-  iPlayedCount = 0;
+  iPlayedCount = 1;
+
   if(bDebug)
   {
     MutLog("-----|| Found [" $SoundList.Length$ "] Sounds in Config File ||-----");
@@ -54,13 +55,12 @@ function PostBeginPlay()
 
 function Timer()
 {
-  sLastSoundPlayedBy = "";
   iLastPlayedAt = 0;
 }
 
 function Mutate(string command, PlayerController Sender)
 {
-  local string PN, PID, WelcomeMSG, DelayMSG, TotalSoundsMSG, UsageMSG, PrintSoundsMSG;
+  local string PN, PID, WelcomeMSG, DelayMSG, TimeoutMSG, TotalSoundsMSG, UsageMSG, PrintSoundsMSG;
   local array<string> SplitCMD;
 
   PN = Sender.PlayerReplicationInfo.PlayerName;
@@ -77,18 +77,21 @@ function Mutate(string command, PlayerController Sender)
 	{
 		WelcomeMSG = "%yYou are viewing Sound-Board Help, below are the commands you can use";
 		DelayMSG = "%bDelay between sounds (seconds): %w" $iDelay;
+    TimeoutMSG = "%bPlayers get timed-out after %t" $iTimeOut$ "%w consecutive sound triggers";
 		TotalSoundsMSG = "%bTotal Sounds: %w" $SoundList.Length;
 		UsageMSG = "%bUsage: %wmutate " $sPlaySoundCMD$ " %tXXX%w | XXX is the tag of the sound you want to play";
     PrintSoundsMSG = "%bTo view all available sounds: %wmutate %t!sounds %wOR %t!snds";
 
     SetColor(WelcomeMSG);
 		SetColor(DelayMSG);
+    SetColor(TimeoutMSG);
 		SetColor(TotalSoundsMSG);
 		SetColor(UsageMSG);
 		SetColor(PrintSoundsMSG);
 
     Sender.ClientMessage(WelcomeMSG);
 		Sender.ClientMessage(DelayMSG);
+		Sender.ClientMessage(TimeoutMSG);
 		Sender.ClientMessage(TotalSoundsMSG);
 		Sender.ClientMessage(UsageMSG);
 		Sender.ClientMessage(PrintSoundsMSG);
@@ -163,19 +166,22 @@ function bool CheckSoundAndPlay(string SoundToPlay, array<CS> ListOfSounds, stri
         SoundPlayedMSG = "%t" $ListOfSounds[i].SoundBind$ "%w! [" $PlayerName$ "]";
         if (SoundEffect != none)
         {
-          if(sLastSoundPlayedBy == PlayerName && iPlayedCount < iTimeOut)
+          if (iLastPlayedAt < (Level.TimeSeconds))
+          {
+            if(sLastSoundPlayedBy == PlayerName)
             {
-              iPlayedCount = iPlayedCount + 1;
-              if (iPlayedCount > iTimeOut)
+              iPlayedCount += 1;
+              if (iPlayedCount >= iTimeOut)
               {
                 SetColor(SpamCountMSG);
                 TmpPC.ClientMessage(SpamCountMSG);
                 return false;
               }
             }
-          if (iLastPlayedAt < (Level.TimeSeconds))
-          {
-            if(sLastSoundPlayedBy != PlayerName) iPlayedCount = 0;
+            else
+            {
+              iPlayedCount = 0;
+            }
             if(bNotifyOnSoundUsed) ServerMessage(SoundPlayedMSG);
             PlaySoundEffect(ListOfSounds[i].Sound);
             iLastPlayedAt = Level.TimeSeconds + iDelay;

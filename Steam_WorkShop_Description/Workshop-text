@@ -1,3 +1,22 @@
+Play custom sounds with key binds / mutate commands!
+
+- Anti-Spam features (Delay, Timeout)
+- Easy configuration
+- Easy to use (Best way is to bind keys with your most likable sounds)
+- 17x Base Sounds (Can increase without the need of editing code)
+- Fun ? ;p
+
+[h1][b][u]Notes[/u][/b][/h1]
+
+- Mut is [b]WHITELISTED[/b] on dedicated servers
+
+[h1][b][u]Number Of Files[/u][/b][/h1]
+
+- 4
+
+[h1][b][u]Sample Config[/u][/b][/h1]
+
+[code]
 [KFSoundBoard.KFSoundBoard]
 bDebug=True
 # If True, every time a sound is used it will be displayed as a server message in the chat like this
@@ -42,4 +61,38 @@ ColorList=(ColorName="Blue",ColorTag="%b",Color=(B=200,G=100,R=0,A=0))
 ColorList=(ColorName="Teal",ColorTag="%t",Color=(B=113,G=179,R=60,A=0))
 ColorList=(ColorName="Violet",ColorTag="%v",Color=(B=139,G=0,R=255,A=0))
 ColorList=(ColorName="White",ColorTag="%w",Color=(B=200,G=200,R=200,A=0))
+[/code]
 
+[h1][b][u]File Names[/u][/b][/h1]
+
+- \System\KFSoundBoard.u
+- \System\KFSoundBoard.ucl
+- \System\KFSoundBoard.ini
+
+- \Sounds\SoundBoardSND.uax
+
+[h1][b][u]Usage[/u][/b][/h1]
+
+1- Subscribe or download manually (Recommended)
+2- Launch the game and wait to see 'Completed'
+3- Restart the game and you can see the mutators in your list
+
+[i]How to add more sounds ?[/i]
+
+- Open SoundBoardSND.uax with Killing Floor SDK
+- Import the sound (.wav) you want under the SoundGroup you would like
+- Save the .uax (Overwrite, it's fine)
+- Add the new sound in the config!
+- Profit!
+
+[h1][b][u]Class Names[/u][/b][/h1]
+
+- Mut: KFSoundBoard.KFSoundBoard
+
+[h1][b][u]Manual Download Links (Recommended)[/u][/b][/h1]
+
+You can find it under 'Whitelisted' folder named 'KF-SoundBoard-v1.0'
+
+- MEGA Link: https://mega DOT nz/folder/YDoEmKiC#s6FGAtgh40-TvB4bHsLaMQ
+
+- Github: https://github.com/Vel-San/KF-SoundBoard/releases/tag/v1.0
