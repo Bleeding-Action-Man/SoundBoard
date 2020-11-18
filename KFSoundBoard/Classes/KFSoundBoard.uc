@@ -108,6 +108,8 @@ function Mutate(string command, PlayerController Sender)
   {
     CheckSoundAndPlay(SplitCMD[1], SoundList, PN, Sender);
   }
+
+  if (NextMutator != None ) NextMutator.Mutate(command, Sender);
 }
 
 final function SplitStringToArray(out array<string> Parts, string Source, string Delim)
@@ -283,7 +285,7 @@ defaultproperties
 {
   // Mandatory Vars
 	GroupName = "KF-SoundBoard"
-  FriendlyName = "Sound Board - v1.0"
+  FriendlyName = "Sound Board - v1.1"
   Description = "Play custom sounds with key binds / mutate commands; Made by Vel-San"
 
   // Config Vars

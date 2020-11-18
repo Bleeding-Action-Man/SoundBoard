@@ -67,7 +67,7 @@ ColorList=(ColorName="White",ColorTag="%w",Color=(B=200,G=200,R=200,A=0))
 
 - \System\KFSoundBoard.u
 - \System\KFSoundBoard.ucl
-- \System\KFSoundBoard.ini
+- \System\SoundBoardConfig.ini
 
 - \Sounds\SoundBoardSND.uax
 
@@ -91,8 +91,8 @@ ColorList=(ColorName="White",ColorTag="%w",Color=(B=200,G=200,R=200,A=0))
 
 [h1][b][u]Manual Download Links (Recommended)[/u][/b][/h1]
 
-You can find it under 'Whitelisted' folder named 'KF-SoundBoard-v1.0'
+You can find it under 'Whitelisted' folder named 'KF-SoundBoard-v1.1'
 
 - MEGA Link: https://mega DOT nz/folder/YDoEmKiC#s6FGAtgh40-TvB4bHsLaMQ
 
-- Github: https://github.com/Vel-San/KF-SoundBoard/releases/tag/v1.0
+- Github: https://github.com/Vel-San/KF-SoundBoard/releases/tag/v1.1
